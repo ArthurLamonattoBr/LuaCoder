@@ -28,3 +28,8 @@ Uma IDE simples e poderosa pra editar, rodar e gerenciar scripts Lua com Explore
 - Lua instalado no sistema (caminho padrão `C:\Program Files (x86)\Lua\5.1\lua.exe`)
 
 ---
+
+# LOG DE ATUALIZAÇÃO
+v2.0 20/06/2026
+- autocomplete adicionado
+- syntax highlight
