@@ -1,7 +1,7 @@
 # Lua Coder 🚀
 
 Uma IDE simples e poderosa pra editar, rodar e gerenciar scripts Lua com Explorer integrado. Feito pra agilizar a vida do programador Lua que não quer frescura.
-
+[![Release](https://github.com/ArthurLamonattoBr/LuaCoder/releases/latest)
 ---
 
 ## Funcionalidades
