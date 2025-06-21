@@ -30,6 +30,8 @@ Uma IDE simples e poderosa pra editar, rodar e gerenciar scripts Lua com Explore
 ---
 
 # LOG DE ATUALIZAÇÃO
-v2.0 20/06/2026
+# v2.0 20/06/2025
 - autocomplete adicionado
 - syntax highlight
+# v3.0 21/06/2025
+- Visualizador de imagem intregado
