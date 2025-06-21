@@ -7,6 +7,7 @@ from tkinter import *
 from tkinter import ttk, filedialog, messagebox, simpledialog
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+from PIL import Image, ImageTk
 from localizar_lua import encontrar_lua
 
 arquivo_atual = None
@@ -28,7 +29,7 @@ def aplicar_syntax_highlight():
     for palavra in keywords:
         start = "1.0"
         while True:
-            pos = text_editor.search(rf'\b{palavra}\b', start, stopindex=END, regexp=True)
+            pos = text_editor.search(rf'\\b{palavra}\\b', start, stopindex=END, regexp=True)
             if not pos:
                 break
             end = f"{pos}+{len(palavra)}c"
@@ -38,7 +39,7 @@ def aplicar_syntax_highlight():
     for palavra in functions:
         start = "1.0"
         while True:
-            pos = text_editor.search(rf'\b{palavra}\b', start, stopindex=END, regexp=True)
+            pos = text_editor.search(rf'\\b{palavra}\\b', start, stopindex=END, regexp=True)
             if not pos:
                 break
             end = f"{pos}+{len(palavra)}c"
@@ -68,7 +69,7 @@ def aplicar_syntax_highlight():
 
     start = "1.0"
     while True:
-        pos = text_editor.search(r'\b\d+\b', start, stopindex=END, regexp=True)
+        pos = text_editor.search(r'\\b\\d+\\b', start, stopindex=END, regexp=True)
         if not pos:
             break
         end = f"{pos}+{len(text_editor.get(pos, f'{pos} wordend'))}c"
@@ -159,7 +160,7 @@ def global_key_handler(event):
             return "break"
 
 def montar_arvore(tree, caminho, pai=""):
-    for child in tree.get_children():
+    for child in tree.get_children(pai):
         tree.delete(child)
     try:
         itens = sorted(os.listdir(caminho), key=lambda x: (not os.path.isdir(os.path.join(caminho, x)), x.lower()))
@@ -167,11 +168,9 @@ def montar_arvore(tree, caminho, pai=""):
         return
     for item in itens:
         caminho_completo = os.path.join(caminho, item)
+        node = tree.insert(pai, "end", text=item, open=False)
         if os.path.isdir(caminho_completo):
-            node = tree.insert(pai, "end", text=item, open=False)
             montar_arvore(tree, caminho_completo, node)
-        else:
-            tree.insert(pai, "end", text=item, open=False)
 
 def caminho_do_item(tree, item_id):
     partes = []
@@ -180,6 +179,17 @@ def caminho_do_item(tree, item_id):
         item_id = tree.parent(item_id)
     return os.path.join(root_path, *partes)
 
+def abrir_imagem(caminho_imagem):
+    try:
+        img_window = Toplevel(root)
+        img_window.title(f"Visualizador de Imagem - {os.path.basename(caminho_imagem)}")
+        img = Image.open(caminho_imagem)
+        img_tk = ImageTk.PhotoImage(img)
+        label = Label(img_window, image=img_tk)
+        label.image = img_tk
+        label.pack()
+    except Exception as e:
+        messagebox.showerror("Erro", f"Erro ao abrir imagem:\\n{e}")
 def limpar_selecao_e_editor():
     global arquivo_atual
     arquivo_atual = None
@@ -196,6 +206,10 @@ def ao_clicar(event):
     item_id = selecionados[0]
     caminho_completo = caminho_do_item(tree, item_id)
     if os.path.isfile(caminho_completo):
+        ext = os.path.splitext(caminho_completo)[1].lower()
+        if ext in [".png", ".jpg", ".jpeg", ".gif", ".bmp"]:
+            abrir_imagem(caminho_completo)
+            return
         try:
             with open(caminho_completo, "r", encoding="utf-8", errors="ignore") as f:
                 conteudo = f.read()
@@ -206,7 +220,7 @@ def ao_clicar(event):
             root.title(f"Lua IDE - {arquivo_atual}")
             aplicar_syntax_highlight()
         except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao abrir arquivo:\n{e}")
+            messagebox.showerror("Erro", f"Erro ao abrir arquivo:\\n{e}")
 
 def salvar_arquivo():
     global arquivo_atual
@@ -218,7 +232,7 @@ def salvar_arquivo():
                 f.write(conteudo)
             aplicar_syntax_highlight()
         except Exception as e:
-            messagebox.showerror("Erro", f"Não foi possível salvar o arquivo:\n{e}")
+            messagebox.showerror("Erro", f"Não foi possível salvar o arquivo:\\n{e}")
     else:
         salvar_como()
 
@@ -235,7 +249,7 @@ def salvar_como():
             root.title(f"Lua IDE - {arquivo_atual}")
             aplicar_syntax_highlight()
         except Exception as e:
-            messagebox.showerror("Erro", f"Não foi possível salvar o arquivo:\n{e}")
+            messagebox.showerror("Erro", f"Não foi possível salvar o arquivo:\\n{e}")
 
 def run_lua():
     lua_path = encontrar_lua()
@@ -253,7 +267,7 @@ def run_lua():
     except Exception as e:
         output_box.config(state=NORMAL)
         output_box.delete("1.0", END)
-        output_box.insert(END, f"Erro ao executar Lua:\n{e}")
+        output_box.insert(END, f"Erro ao executar Lua:\\n{e}")
         output_box.config(state=DISABLED)
 
 def run_lua_comando():
@@ -267,12 +281,12 @@ def run_lua_comando():
     try:
         process = subprocess.run([lua_path, "-e", comando], capture_output=True, text=True)
         output_box.config(state=NORMAL)
-        output_box.insert(END, f">>> {comando}\n{process.stdout}{process.stderr}\n")
+        output_box.insert(END, f">>> {comando}\\n{process.stdout}{process.stderr}\\n")
         output_box.see(END)
         output_box.config(state=DISABLED)
     except Exception as e:
         output_box.config(state=NORMAL)
-        output_box.insert(END, f"Erro ao executar comando:\n{e}\n")
+        output_box.insert(END, f"Erro ao executar comando:\\n{e}\\n")
         output_box.see(END)
         output_box.config(state=DISABLED)
 
@@ -284,7 +298,7 @@ def criar_arquivo():
         pasta_destino = caminho_selecionado if os.path.isdir(caminho_selecionado) else os.path.dirname(caminho_selecionado)
     else:
         pasta_destino = root_path
-    nome_arquivo = simpledialog.askstring("Criar arquivo", f"Nome do novo arquivo (com extensão) dentro de:\n{pasta_destino}")
+    nome_arquivo = simpledialog.askstring("Criar arquivo", f"Nome do novo arquivo (com extensão) dentro de:\\n{pasta_destino}")
     if nome_arquivo:
         novo_caminho = os.path.join(pasta_destino, nome_arquivo)
         if os.path.exists(novo_caminho):
@@ -296,7 +310,7 @@ def criar_arquivo():
             montar_arvore(tree, root_path)
             limpar_selecao_e_editor()
         except Exception as e:
-            messagebox.showerror("Erro", f"Falha ao criar arquivo:\n{e}")
+            messagebox.showerror("Erro", f"Falha ao criar arquivo:\\n{e}")
 
 def excluir_item():
     item_id = tree.focus()
@@ -304,7 +318,7 @@ def excluir_item():
         messagebox.showwarning("Aviso", "Selecione um arquivo ou pasta para excluir.")
         return
     caminho = caminho_do_item(tree, item_id)
-    resposta = messagebox.askyesno("Excluir", f"Tem certeza que quer excluir:\n{caminho}?")
+    resposta = messagebox.askyesno("Excluir", f"Tem certeza que quer excluir:\\n{caminho}?")
     if resposta:
         try:
             if os.path.isdir(caminho):
@@ -314,7 +328,7 @@ def excluir_item():
             montar_arvore(tree, root_path)
             limpar_selecao_e_editor()
         except Exception as e:
-            messagebox.showerror("Erro", f"Falha ao excluir:\n{e}")
+            messagebox.showerror("Erro", f"Falha ao excluir:\\n{e}")
 
 def copiar_arquivo():
     item_id = tree.focus()
@@ -338,7 +352,7 @@ def copiar_arquivo():
         montar_arvore(tree, root_path)
         limpar_selecao_e_editor()
     except Exception as e:
-        messagebox.showerror("Erro", f"Falha ao copiar arquivo:\n{e}")
+        messagebox.showerror("Erro", f"Falha ao copiar arquivo:\\n{e}")
 
 def popup_menu(event):
     item_id = tree.identify_row(event.y)
@@ -360,7 +374,7 @@ def abrir_pasta_raiz():
             else:
                 subprocess.Popen(["xdg-open", root_path])
         except Exception as e:
-            messagebox.showerror("Erro", f"Não foi possível abrir a pasta raiz:\n{e}")
+            messagebox.showerror("Erro", f"Não foi possível abrir a pasta raiz:\\n{e}")
     else:
         messagebox.showwarning("Aviso", "Nenhuma pasta raiz selecionada.")
 
@@ -383,7 +397,6 @@ def iniciar_watcher(path):
             observer.stop()
         observer.join()
     threading.Thread(target=observer_thread, daemon=True).start()
-
 root = Tk()
 root.title("Lua IDE 🚀")
 
